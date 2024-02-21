@@ -1,95 +1,127 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+"use client";
 
-export default function Home() {
+import { useEffect, useState } from "react";
+import Link from "next/link";
+
+import { Header } from "@/components";
+import { SERVER_URL } from "@/config";
+import {
+  Alert,
+  AlertTitle,
+  Box,
+  Button,
+  CssBaseline,
+  Paper,
+  Stack,
+  TextField,
+  ThemeProvider,
+  Typography,
+} from "@mui/material";
+import { useRouter } from "next/navigation";
+import { DefaultTheme } from "@/theme";
+
+export default function Login() {
+  const router = useRouter();
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [shouldSubmit, setShouldSubmit] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [hasLoginError, setHasLoginError] = useState(false);
+
+  useEffect(() => {
+    const submit = async () => {
+      setIsSubmitting(true);
+      setShouldSubmit(false);
+      setHasLoginError(false);
+
+      const result = await fetch(`${SERVER_URL}/users/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const resultJson = await result.json();
+
+      console.log({ resultJson });
+
+      if ("statusCode" in resultJson && resultJson.statusCode === 401) {
+        setHasLoginError(true);
+      } else if ("access_token" in resultJson) {
+        alert("Login success!");
+      }
+
+      setIsSubmitting(false);
+    };
+
+    if (shouldSubmit) {
+      submit();
+    }
+  }, [email, password, router, shouldSubmit]);
+
+  const emailIsValid = email !== "";
+  const passwordIsValid = password !== "";
+
   return (
-    <main className={styles.main}>
-      <div className={styles.description}>
-        <p>
-          Get started by editing&nbsp;
-          <code className={styles.code}>src/app/page.tsx</code>
-        </p>
-        <div>
-          <a
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <CssBaseline>
+      <ThemeProvider theme={DefaultTheme}>
+        <Header />
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            backgroundColor: 'background.default',
+          }}
+        >
+          <Paper
+            sx={{
+              width: "50%",
+              marginTop: 5,
+              padding: 5,
+            }}
           >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className={styles.vercelLogo}
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
-      </div>
-
-      <div className={styles.center}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className={styles.grid}>
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Docs <span>-&gt;</span>
-          </h2>
-          <p>Find in-depth information about Next.js features and API.</p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Learn <span>-&gt;</span>
-          </h2>
-          <p>Learn about Next.js in an interactive course with&nbsp;quizzes!</p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Templates <span>-&gt;</span>
-          </h2>
-          <p>Explore starter templates for Next.js.</p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Deploy <span>-&gt;</span>
-          </h2>
-          <p>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
+            <Stack gap={2}>
+              <Typography variant="h4">Login</Typography>
+              <Typography variant="body1">
+                Please, enter your user information to continue.
+              </Typography>
+              {hasLoginError && (
+                <Alert severity="error">
+                  <AlertTitle>Login failed</AlertTitle>
+                  The provided user name and password combination did not
+                  correspond to a registered user.
+                </Alert>
+              )}
+              <TextField
+                type="email"
+                label="Email"
+                value={email}
+                error={!emailIsValid}
+                helperText={!emailIsValid && "Email is required"}
+                onChange={(event) => setEmail(event.target.value)}
+              />
+              <TextField
+                type="password"
+                label="Password"
+                value={password}
+                error={!passwordIsValid}
+                helperText={!passwordIsValid && "Password is required"}
+                onChange={(event) => setPassword(event.target.value)}
+              />
+              <Button
+                variant="contained"
+                disabled={isSubmitting}
+                onClick={() => setShouldSubmit(true)}
+              >
+                Login
+              </Button>
+            </Stack>
+          </Paper>
+        </Box>
+      </ThemeProvider>
+    </CssBaseline>
   );
 }
